@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   LayoutDashboard, ArrowUpCircle, ArrowDownCircle, Plus, X, Trash2, 
-  Search, Edit3, Briefcase, Calendar, DollarSign, PlusCircle, Paperclip,
+  Search, Edit3, Briefcase, DollarSign, PlusCircle, Paperclip,
   TrendingUp, TrendingDown, Layers, Wallet, Clock, Download
 } from 'lucide-react';
 import { 
