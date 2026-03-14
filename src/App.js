@@ -8,42 +8,42 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 
+// Firebase Imports
+import { db } from './firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [statusUpdateItem, setStatusUpdateItem] = useState(null);
   
-  // Search aur Date Filter States [cite: 5, 6]
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const [receivables, setReceivables] = useState(() => JSON.parse(localStorage.getItem('rub_v5_rec')) || []);
-  const [payables, setPayables] = useState(() => JSON.parse(localStorage.getItem('rub_v5_pay')) || []);
+  // Firebase ke liye States
+  const [receivables, setReceivables] = useState([]);
+  const [payables, setPayables] = useState([]);
 
-  const initialForm = {
-    date: new Date().toISOString().split('T')[0],
-    invoiceNo: '', name: '', platform: '', amount: '', paidAmount: '',
-    payDate: '', status: 'Unpaid', docs: '',
-    providers: [{ vName: '', vAmount: '', vPlatform: '', vService: '' }] 
-  };
-
-  const [formData, setFormData] = useState(initialForm);
-
+  // Firebase Real-time Sync (Data cloud se laane ke liye)
   useEffect(() => {
-    localStorage.setItem('rub_v5_rec', JSON.stringify(receivables));
-    localStorage.setItem('rub_v5_pay', JSON.stringify(payables));
-  }, [receivables, payables]);
+    const qRec = query(collection(db, "receivables"), orderBy("date", "desc"));
+    const unsubRec = onSnapshot(qRec, (snapshot) => {
+      setReceivables(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
 
-  const calculateOutstanding = (amt, paid) => {
-    const res = parseFloat(amt || 0) - parseFloat(paid || 0);
-    return res > 0 ? res.toFixed(2) : 0;
-  };
+    const qPay = query(collection(db, "payables"), orderBy("date", "desc"));
+    const unsubPay = onSnapshot(qPay, (snapshot) => {
+      setPayables(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
 
-  // Global Filter Function jo har jagah apply hogi [cite: 11]
+    return () => { unsubRec(); unsubPay(); };
+  }, []);
+
+  // Global Filter Function
   const getFilteredData = (dataList) => {
     return dataList.filter(item => {
       const matchSearch = (item.name + (item.invoiceNo || '')).toLowerCase().includes(searchTerm.toLowerCase());
